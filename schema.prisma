@@ -7,13 +7,19 @@ generator client {
   provider = "prisma-client-js"
 }
 
+enum DayOfWeek {
+  monday
+  tuesday
+  wednesday
+  thursday
+  friday
+}
+
 model Subject {
   id          Int      @id @default(autoincrement())
   name        String
-  className   String
   professor   String
   description String?
-  dayOfWeek   String    // ex: "monday", "tuesday", etc.
-  startTime   String    // ex: "10:00"
-  endTime     String    // ex: "11:30"
+  dayOfWeeks  dayOfWeek[]    // ex: "monday", "tuesday"
+  startTime   Int    // ex: 1=08h, 2=10h ... 6=21h
 }
