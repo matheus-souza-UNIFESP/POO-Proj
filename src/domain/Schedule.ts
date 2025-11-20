@@ -5,8 +5,8 @@ export class Schedule {
     public id?: number
     constructor(
         public name: string,
-        public user: User,
-        public subjects: Subject[]
+        public userID: number,
+        public subjects: Subject[] = []
     ) {}
 
     addSubject(subject: Subject){
