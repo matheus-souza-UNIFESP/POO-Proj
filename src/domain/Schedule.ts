@@ -22,7 +22,10 @@ export class Schedule {
 
     checkConflict(subject: Subject): boolean{
         for(let s of this.subjects){
-            s.daysOfWeek.find()//fazer depois
+            for(let d of subject.daysOfWeek){
+                if (s.daysOfWeek.includes(d))
+                    return true
+            }
         }
         return false
     }
