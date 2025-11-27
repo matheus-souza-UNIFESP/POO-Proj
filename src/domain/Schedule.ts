@@ -1,5 +1,4 @@
 import { Subject } from './Subject'
-import { User } from './User'
 
 export class Schedule {
     public id?: number
@@ -9,24 +8,32 @@ export class Schedule {
         public subjects: Subject[] = []
     ) {}
 
-    addSubject(subject: Subject){
-        if(this.checkConflict(subject))
-            console.log('Conflito de horário')
-        else
-            this.subjects.push(subject)
-    }
+    addSubject(subject: Subject) {
+        const conflicts = this.checkConflicts(subject)
 
-    removeSubject(subject: Subject){
-        this.subjects = this.subjects.filter(s => s.name !== subject.name)
-    }
-
-    checkConflict(subject: Subject): boolean{
-        for(let s of this.subjects){
-            for(let d of subject.daysOfWeek){
-                if (s.daysOfWeek.includes(d))
-                    return true
-            }
+        if(conflicts.length > 0) {
+            return { success: false, error: 'CONFLICTS_FOUND', conflicts }; //retorna a lista de materias conflitantes
         }
-        return false
+
+        this.subjects.push(subject);
+        return { success: true };
+    }
+
+    removeSubject(subject: Subject) {
+        const subjectExists = this.subjects.some(s => s.name === subject.name)
+
+        if(!subjectExists) {
+            return { success: false, error: 'NOT_FOUND' }   //materia para remover nao existe na grade
+        }
+
+        this.subjects = this.subjects.filter(s => s.name !== subject.name)
+        return { success: true}
+    }
+
+    checkConflicts(newSubject: Subject) {
+        return this.subjects.filter(s =>
+            s.time === newSubject.time &&
+            s.daysOfWeek.some(d => newSubject.daysOfWeek.includes(d))
+        );
     }
 }
