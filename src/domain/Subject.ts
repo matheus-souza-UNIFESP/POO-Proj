@@ -3,6 +3,7 @@
 */
 
 export class Subject {
+    public id?: number
     constructor(
         public name: string,
         public professor: string,
