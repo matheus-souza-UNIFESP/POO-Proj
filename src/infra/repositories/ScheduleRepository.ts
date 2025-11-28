@@ -1,6 +1,15 @@
 import prisma from "../prisma/client"
 
+/*  
+    Repositório responsável por todas
+    operações do banco de dados envolvendo
+    as grades horárias
+*/
+
 export class ScheduleRepository {
+
+    //Busca uma única grade pelo seu ID
+    //Retorna null se não existe
     async getById(id: number) {
         return prisma.schedule.findUnique({
             where: { id },
@@ -8,6 +17,7 @@ export class ScheduleRepository {
         });
     }
 
+    //Retorna todas as grades do usuário
     async getByUserId(userId: number) {
         return prisma.schedule.findMany({
             where: { userId },
@@ -15,6 +25,8 @@ export class ScheduleRepository {
         })
     }
 
+    //Cria uma nova grade para o usuário
+    //Retorna a grade criada com a lista de matérias vazia
     async create(name: string, userId: number) {
         return prisma.schedule.create({
             data: { name, userId },
@@ -22,12 +34,14 @@ export class ScheduleRepository {
         })
     }
 
+    //Deleta permanentemente uma grade
     async delete(id: number) {
         return prisma.schedule.delete({
             where: { id }
         })
     }
 
+    //Atualiza o nome de uma grade existente
     async rename(id: number, newName: string) {
         return prisma.schedule.update({
             where: { id },
@@ -35,6 +49,8 @@ export class ScheduleRepository {
         })
     }
 
+    //Adiciona uma matéria a uma grade
+    //Usa connect pois a lista de matérias já existe
     async addSubject(scheduleId: number, subjectId: number) {
         return prisma.schedule.update({
             where: { id: scheduleId },
@@ -47,6 +63,8 @@ export class ScheduleRepository {
         })
     }
 
+    //Remove uma matéria de uma grade
+    //Não deleta a matéria
     async removeSubject(scheduleId: number, subjectId: number) {
         return prisma.schedule.update({
             where: { id: scheduleId },

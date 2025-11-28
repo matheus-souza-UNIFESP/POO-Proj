@@ -1,3 +1,7 @@
+/*
+    Classe com as informações das matérias
+*/
+
 export class Subject {
     constructor(
         public name: string,
