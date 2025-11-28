@@ -14,7 +14,7 @@ export class ScheduleRepository {
         return prisma.schedule.findUnique({
             where: { id },
             include: { subjects: true }
-        });
+        })
     }
 
     //Retorna todas as grades do usuário
