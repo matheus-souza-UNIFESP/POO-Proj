@@ -6,8 +6,8 @@ import { Schedule } from './Schedule'
 */
 
 export class User {
+    public id?: number
     constructor(
-        public id: number,
         public username: string,
         public password: string,
         public schedules: Schedule[] = []
