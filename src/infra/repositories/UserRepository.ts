@@ -26,6 +26,8 @@ export class UserRepository {
         })
     }
 
+    //Retorna todos os usuários cadastrados
+    //Para uso do admin
     async getAll() {
         return prisma.user.findMany({
             include: { schedules: true }
