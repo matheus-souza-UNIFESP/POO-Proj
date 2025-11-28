@@ -1,6 +1,4 @@
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import prisma from "../prisma/client"
 
 export class ScheduleRepository {
     async getById(id: number) {
@@ -10,30 +8,51 @@ export class ScheduleRepository {
         });
     }
 
-    async create(data: { name: string }) {
-        return prisma.schedule.create({
-            data
+    async getByUserId(userId: number) {
+        return prisma.schedule.findMany({
+            where: { userId },
+            include: { subjects: true }
         })
     }
 
-    async addSubject(scheduleID: number, subjectID: number) {
+    async create(name: string, userId: number) {
+        return prisma.schedule.create({
+            data: { name, userId },
+            include: { subjects: true }
+        })
+    }
+
+    async delete(id: number) {
+        return prisma.schedule.delete({
+            where: { id }
+        })
+    }
+
+    async rename(id: number, newName: string) {
         return prisma.schedule.update({
-            where: { id: scheduleID },
+            where: { id },
+            data: { name: newName }
+        })
+    }
+
+    async addSubject(scheduleId: number, subjectId: number) {
+        return prisma.schedule.update({
+            where: { id: scheduleId },
             data: {
                 subjects: {
-                    connect: { id: subjectID }
+                    connect: { id: subjectId }
                 }
             },
             include: { subjects: true }
         })
     }
 
-    async removeSubject(scheduleID: number, subjectID: number) {
+    async removeSubject(scheduleId: number, subjectId: number) {
         return prisma.schedule.update({
-            where: { id: scheduleID },
+            where: { id: scheduleId },
             data: {
                 subjects: {
-                    disconnect: { id: subjectID }
+                    disconnect: { id: subjectId }
                 }
             },
             include: { subjects: true }
