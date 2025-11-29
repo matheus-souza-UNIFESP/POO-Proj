@@ -1,24 +1,41 @@
 datasource db {
   provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum DayOfWeek {
-  monday
-  tuesday
-  wednesday
-  thursday
-  friday
+model Class {
+  id          Int       @id @default(autoincrement())
+  day         Int
+  time        Int
+  classroom   Int
+  subjectId   Int
+  subject     Subject   @relation(fields: [subjectId], references: [id])
+}
+
+model Schedule {
+  id          Int       @id @default(autoincrement())
+  name        String
+  subjects    Subject[]
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+
 }
 
 model Subject {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   name        String
   professor   String
-  description String?
-  dayOfWeeks  dayOfWeek[]    // ex: "monday", "tuesday"
-  startTime   Int    // ex: 1=08h, 2=10h ... 6=21h
+  classes     Class[]
+  schedules   Schedule[]
+}
+
+model User {
+  id          Int       @id @default(autoincrement())
+  username    String
+  password    String    //HASHED
+  schedules   Schedule[]
 }
