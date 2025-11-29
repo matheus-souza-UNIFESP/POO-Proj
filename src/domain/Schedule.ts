@@ -22,8 +22,8 @@ export class Schedule {
             return { success: false, error: 'CONFLICTS_FOUND', conflicts };
         }
 
-        this.subjects.push(subject);
-        return { success: true };
+        this.subjects.push(subject)
+        return { success: true }
     }
 
     //Remove uma matéria da grade
@@ -40,11 +40,26 @@ export class Schedule {
     }
 
     //Verifica se o horário da nova matéria se sobrepõe com o horário de outras matérias
-    //Retorna a lista de matérias conflitantes, vazia se não houverem
+    //Retorna a lista de aulas conflitantes, vazia se não houverem
     checkConflicts(newSubject: Subject) {
-        return this.subjects.filter(s =>
-            s.time === newSubject.time &&
-            s.daysOfWeek.some(d => newSubject.daysOfWeek.includes(d))
-        );
+        const conflicts = []
+        for(const existing of this.subjects) {
+            for(const exClass of existing.classes) {
+                const conflict = newSubject.classes.find(newClass =>
+                    newClass.day === exClass.day &&
+                    newClass.time === exClass.time
+                )
+
+                if(conflict) {
+                    conflicts.push({
+                        subject: existing,
+                        existingClass: exClass,
+                        newClass: conflict
+                    })
+                }
+            }
+        }
+
+        return conflicts
     }
 }

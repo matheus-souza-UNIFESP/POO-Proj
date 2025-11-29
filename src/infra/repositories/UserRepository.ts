@@ -11,7 +11,7 @@ export class UserRepository {
     //Busca o usuário pelo seu ID
     //Retorna null se não existe
     async getById(id: number) {
-        return prisma.user.findUnique({
+        return await prisma.user.findUnique({
             where: { id },
             include: { schedules: true }
         })
@@ -20,7 +20,7 @@ export class UserRepository {
     //Busca o usuário pelo seu username
     //Retorna null se não existe
     async getByUsername(username: string) {
-        return prisma.user.findUnique({
+        return await prisma.user.findUnique({
             where: { username },
             include: { schedules: true }
         })
@@ -29,7 +29,7 @@ export class UserRepository {
     //Retorna todos os usuários cadastrados
     //Para uso do admin
     async getAll() {
-        return prisma.user.findMany({
+        return await prisma.user.findMany({
             include: { schedules: true }
         })
     }
@@ -37,7 +37,7 @@ export class UserRepository {
 
     //Cria um novo usuário e retorna-o com a lista de grades vazia
     async create(username: string, hashedPassword: string) {
-        return prisma.user.create({
+        return await prisma.user.create({
             data: { username, password: hashedPassword },
             include: { schedules: true }
         })
@@ -45,14 +45,14 @@ export class UserRepository {
 
     //Deleta permanentemente um usuário
     async delete(id: number) {
-        return prisma.user.delete({
+        return await prisma.user.delete({
             where: { id }
         })
     }
 
     //Altera o username de um usuário existente
     async updateUsername(id: number, newUsername: string) {
-        return prisma.user.update({
+        return await prisma.user.update({
             where: { id },
             data: { username: newUsername}
         })
@@ -60,7 +60,7 @@ export class UserRepository {
 
     //Altera a senha de um usuário existente
     async updatePassword(id: number, hashedPassword: string) {
-        return prisma.user.update({
+        return await prisma.user.update({
             where: { id },
             data: { password: hashedPassword}
         })

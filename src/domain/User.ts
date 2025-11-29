@@ -6,15 +6,14 @@ import { Schedule } from './Schedule'
 */
 
 export class User {
-    public id?: number
     constructor(
         public username: string,
         public password: string,
-        public schedules: Schedule[] = []
+        public schedules: Schedule[] = [],
+        public id?: number
     ) {}
 
     //Adiciona uma grade para a lista do usuário
-    //NÃO atualiza o BD
     addSchedule(schedule: Schedule) {
         this.schedules.push(schedule);
     }

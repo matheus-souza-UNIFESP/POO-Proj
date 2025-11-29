@@ -1,14 +1,14 @@
+import { Class } from './Class'
+
 /*
     Classe com as informações das matérias
 */
 
 export class Subject {
-    public id?: number
     constructor(
         public name: string,
         public professor: string,
-        public daysOfWeek: number[],
-        public time: number,
-        public description?: string
+        public classes: Class[] = [],
+        public id?: number
     ) {}
 }
