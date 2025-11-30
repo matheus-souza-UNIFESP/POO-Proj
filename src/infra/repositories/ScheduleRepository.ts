@@ -26,6 +26,14 @@ export class ScheduleRepository {
         })
     }
 
+    //Retorna uma grade pelo seu nome
+    async getByName(userId: number, name: string) {
+        return await prisma.schedule.findFirst({
+            where: { userId, name },
+            include: { subjects: true }
+        })
+    }
+
     //Cria uma nova grade para o usuário
     //Retorna a grade criada com a lista de matérias vazia
     async create(schedule: Schedule) {
