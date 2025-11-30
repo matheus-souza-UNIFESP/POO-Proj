@@ -9,7 +9,7 @@ export class Schedule {
     public id?: number
     constructor(
         public name: string,
-        public userID: number,
+        public userId: number,
         public subjects: Subject[] = []
     ) {}
 

@@ -1,17 +1,21 @@
-import { UserRepository } from "../infra/repositories/UserRepository"
-import { User } from "../domain/User"
 import bcrypt from "bcrypt"
+import { UserRepository } from "../infra/repositories/UserRepository"
+import { ScheduleRepository } from "../infra/repositories/ScheduleRepository";
+import { User } from "../domain/User"
+import { Schedule } from "../domain/Schedule";
 
 export class UserService {
-    private userRepo: UserRepository;
-    private saltRounds = 10;
+    private userRepo: UserRepository
+    private scheduleRepo: ScheduleRepository
+    private saltRounds = 10
 
-    constructor(userRepo: UserRepository) {
-        this.userRepo = userRepo;
+    constructor(userRepo: UserRepository, scheduleRepo: ScheduleRepository) {
+        this.userRepo = userRepo
+        this.scheduleRepo = scheduleRepo
     }
 
     //Registrar usuário
-    async register(username: string, password: string): Promise<User> {
+    async register(username: string, password: string) {
         const existingUser = await this.userRepo.getByUsername(username)
         if(existingUser) throw new Error("USERNAME_IN_USE")
 
@@ -23,7 +27,7 @@ export class UserService {
     }
 
     //Loga um usuário
-    async login(username: string, password: string): Promise<User | null> {
+    async login(username: string, password: string) {
         const user = await this.userRepo.getByUsername(username)
         if(!user) throw new Error("USER_NOT_FOUND")
 
@@ -46,6 +50,25 @@ export class UserService {
         user.username = newUsername
 
         return await this.userRepo.updateUsername(user)
+    }
+
+    //Cria uma nova grade para o usuário
+    async addSchedule(userId: number, scheduleName: string) {
+        const user = await this.userRepo.getById(userId)
+        if(!user) throw new Error("USER_NOT_FOUND")
+
+        const usersSchedules: Schedule[] = await this.scheduleRepo.getByUserId(userId)
+        const nameInuse = usersSchedules.some(s => s.name === scheduleName)
+        if(nameInuse) throw new Error("SCHEDULE_NAME_IN_USE")
+
+        const newSchedule = new Schedule(scheduleName, userId)
+
+        return await this.scheduleRepo.create(newSchedule)
+    }
+
+    //Deleta uma grade
+    async deleteSchedule(id: number) {
+        return await this.scheduleRepo.delete(id)
     }
 
     //Atualiza a senha (ADMIN)

@@ -81,6 +81,7 @@ export class SubjectRepository {
         return await prisma.subject.create({
             data: {
                 name: subject.name,
+                professor: subject.professor,
                 classes: {
                     create: subject.classes
                 }
@@ -95,12 +96,24 @@ export class SubjectRepository {
             data: {
                 name: subject.name,
                 professor: subject.professor,
-                classes: subject.classes
-                    ? {
-                        deleteMany: {},
-                        create: subject.classes
+                classes: {
+                     upsert: subject.classes.map(cls => ({
+                        where: { id: cls.id ?? 0 },
+                        update: {
+                            day: cls.day,
+                            time: cls.time,
+                            classroom: cls.classroom,
+                        },
+                        create: {
+                            day: cls.day,
+                            time: cls.time,
+                            classroom: cls.classroom,
+                        }
+                    })),
+                    deleteMany: {
+                        id: { notIn: subject.classes.map(c => c.id).filter(Boolean) }
                     }
-                    : undefined
+                }
             },
             include: { classes: true }
         })
@@ -109,7 +122,8 @@ export class SubjectRepository {
     //Deleta permanentemente uma matéria
     async delete(id: number) {
         return await prisma.subject.delete({
-            where: { id }
+            where: { id },
+            include: { classes: true}
         })
     }
 }

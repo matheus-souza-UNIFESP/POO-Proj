@@ -40,7 +40,7 @@ export class ScheduleRepository {
         return await prisma.schedule.create({
             data: {
                 name: schedule.name,
-                userId: schedule.userID
+                userId: schedule.userId
             },
             include: { subjects: true }
         })
@@ -57,7 +57,8 @@ export class ScheduleRepository {
     async rename(schedule: Schedule) {
         return await prisma.schedule.update({
             where: { id: schedule.id },
-            data: { name: schedule.name }
+            data: { name: schedule.name },
+            include: { subjects: true }
         })
     }
 

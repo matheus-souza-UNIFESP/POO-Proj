@@ -28,13 +28,16 @@ export class UserRepository {
     }
 
     //Retorna todos os usuários cadastrados
-    //Para uso do admin
     async getAll() {
-        return await prisma.user.findMany({
+        return await prisma.user.findMany()
+    }
+
+    //Retorna todos os usuários cadastrados e suas grades
+    async getAllWithSchedules() {
+        return prisma.user.findMany({
             include: { schedules: true }
         })
     }
-
 
     //Cria um novo usuário e retorna-o com a lista de grades vazia
     async create(user: User) {
@@ -58,7 +61,8 @@ export class UserRepository {
     async updateUsername(user: User) {
         return await prisma.user.update({
             where: { id: user.id },
-            data: { username: user.username }
+            data: { username: user.username },
+            include: { schedules: true }
         })
     }
 
@@ -66,7 +70,8 @@ export class UserRepository {
     async updatePassword(user: User) {
         return await prisma.user.update({
             where: { id: user.id },
-            data: { password: user.password }
+            data: { password: user.password },
+            include: { schedules: true }
         })
     }
 }
