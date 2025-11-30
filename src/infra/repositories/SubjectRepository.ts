@@ -77,35 +77,28 @@ export class SubjectRepository {
     }
 
     //Cria uma nova matéria
-    async create(data: Subject) {
+    async create(subject: Subject) {
         return await prisma.subject.create({
             data: {
-                name: data.name,
+                name: subject.name,
                 classes: {
-                    create: data.classes
+                    create: subject.classes
                 }
             },
             include: { classes: true }
         })
     }
 
-    async update(
-        id: number, 
-        updateData: { 
-            name?: string,
-            professor?: string,
-            classes?: { day: number; time: number; classroom: number }[]
-        }
-    ) {
+    async update(subject: Subject) {
         return await prisma.subject.update({
-            where: { id },
+            where: { id: subject.id },
             data: {
-                name: updateData.name,
-                professor: updateData.professor,
-                classes: updateData.classes
+                name: subject.name,
+                professor: subject.professor,
+                classes: subject.classes
                     ? {
                         deleteMany: {},
-                        create: updateData.classes
+                        create: subject.classes
                     }
                     : undefined
             },

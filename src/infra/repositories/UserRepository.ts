@@ -1,4 +1,5 @@
 import prisma from "../prisma/client"
+import { User } from "../../domain/User"
 
 /*  
     Repositório responsável por todas
@@ -36,9 +37,12 @@ export class UserRepository {
 
 
     //Cria um novo usuário e retorna-o com a lista de grades vazia
-    async create(username: string, hashedPassword: string) {
+    async create(user: User) {
         return await prisma.user.create({
-            data: { username, password: hashedPassword },
+            data: {
+                username: user.username,
+                password: user.password
+            },
             include: { schedules: true }
         })
     }
@@ -51,18 +55,18 @@ export class UserRepository {
     }
 
     //Altera o username de um usuário existente
-    async updateUsername(id: number, newUsername: string) {
+    async updateUsername(user: User) {
         return await prisma.user.update({
-            where: { id },
-            data: { username: newUsername}
+            where: { id: user.id },
+            data: { username: user.username }
         })
     }
 
     //Altera a senha de um usuário existente
-    async updatePassword(id: number, hashedPassword: string) {
+    async updatePassword(user: User) {
         return await prisma.user.update({
-            where: { id },
-            data: { password: hashedPassword}
+            where: { id: user.id },
+            data: { password: user.password }
         })
     }
 }

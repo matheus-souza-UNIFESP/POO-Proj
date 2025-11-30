@@ -1,4 +1,5 @@
 import prisma from "../prisma/client"
+import { Schedule } from "../../domain/Schedule"
 
 /*  
     Repositório responsável por todas
@@ -27,9 +28,12 @@ export class ScheduleRepository {
 
     //Cria uma nova grade para o usuário
     //Retorna a grade criada com a lista de matérias vazia
-    async create(name: string, userId: number) {
+    async create(schedule: Schedule) {
         return await prisma.schedule.create({
-            data: { name, userId },
+            data: {
+                name: schedule.name,
+                userId: schedule.userID
+            },
             include: { subjects: true }
         })
     }
@@ -42,10 +46,10 @@ export class ScheduleRepository {
     }
 
     //Atualiza o nome de uma grade existente
-    async rename(id: number, newName: string) {
+    async rename(schedule: Schedule) {
         return await prisma.schedule.update({
-            where: { id },
-            data: { name: newName }
+            where: { id: schedule.id },
+            data: { name: schedule.name }
         })
     }
 
