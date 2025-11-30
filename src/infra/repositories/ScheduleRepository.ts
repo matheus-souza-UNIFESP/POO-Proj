@@ -11,7 +11,7 @@ export class ScheduleRepository {
 
     //Busca uma única grade pelo seu ID
     //Retorna null se não existe
-    async getById(id: number) {
+    async getById(id: number): Promise<Schedule> {
         return await prisma.schedule.findUnique({
             where: { id },
             include: { subjects: true }
@@ -19,7 +19,7 @@ export class ScheduleRepository {
     }
 
     //Retorna todas as grades do usuário
-    async getByUserId(userId: number) {
+    async getByUserId(userId: number): Promise<Schedule[]> {
         return await prisma.schedule.findMany({
             where: { userId },
             include: { subjects: true }

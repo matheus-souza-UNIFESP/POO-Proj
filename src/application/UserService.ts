@@ -52,25 +52,6 @@ export class UserService {
         return await this.userRepo.updateUsername(user)
     }
 
-    //Cria uma nova grade para o usuário
-    async addSchedule(userId: number, scheduleName: string) {
-        const user = await this.userRepo.getById(userId)
-        if(!user) throw new Error("USER_NOT_FOUND")
-
-        const usersSchedules: Schedule[] = await this.scheduleRepo.getByUserId(userId)
-        const nameInuse = usersSchedules.some(s => s.name === scheduleName)
-        if(nameInuse) throw new Error("SCHEDULE_NAME_IN_USE")
-
-        const newSchedule = new Schedule(scheduleName, userId)
-
-        return await this.scheduleRepo.create(newSchedule)
-    }
-
-    //Deleta uma grade
-    async deleteSchedule(id: number) {
-        return await this.scheduleRepo.delete(id)
-    }
-
     //Atualiza a senha (ADMIN)
     async updatePassword(adminId: number, userId: number, newPassword: string) {
         const admin = await this.userRepo.getById(adminId)
@@ -90,5 +71,13 @@ export class UserService {
         if(!admin || !admin.isAdmin) throw new Error("NOT_AUTHORIZED")
 
         return await this.userRepo.getAll();
+    }
+
+    //Lista todos os usuários e suas grades (ADMIN)
+    async getAllUsersWithSchedules(adminId: number): Promise<User[]> {
+        const admin = await this.userRepo.getById(adminId)
+        if(!admin || !admin.isAdmin) throw new Error("NOT_AUTHORIZED")
+
+        return await this.userRepo.getAllWithSchedules();
     }
 }
