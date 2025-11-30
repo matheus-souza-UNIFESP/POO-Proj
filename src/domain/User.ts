@@ -9,6 +9,7 @@ export class User {
     constructor(
         public username: string,
         public password: string,
+        isAdmin: boolean = false,
         public schedules: Schedule[] = [],
         public id?: number
     ) {}

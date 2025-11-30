@@ -37,5 +37,6 @@ model User {
   id          Int       @id @default(autoincrement())
   username    String
   password    String    //HASHED
+  isAdmin     Boolean   @default(false)
   schedules   Schedule[]
 }
