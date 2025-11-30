@@ -1,5 +1,4 @@
 import { SubjectRepository } from "../infra/repositories/SubjectRepository"
-import { Class } from "../domain/Class"
 import { Subject } from "../domain/Subject"
 
 export class SubjectService {
@@ -25,6 +24,7 @@ export class SubjectService {
         if(!exists) throw new Error("SUBJECT_NOT_FOUND")
 
         const subject = new Subject(name, professor, classes)
+        subject.id = id
 
         return await this.subjectRepo.update(subject)
     }
@@ -61,31 +61,23 @@ export class SubjectService {
     //Busca matérias pelo professor
     async getByProfessor(professor: string) {
         const subject = await this.subjectRepo.getByProfessor(professor)
-        if(!subject) throw new Error("SUBJECT_NOT_FOUND")
-
         return subject
     }
 
     //Busca matérias pelo dia
     async getByDay(day: number) {
         const subject = await this.subjectRepo.getByDay(day)
-        if(!subject) throw new Error("SUBJECT_NOT_FOUND")
-
         return subject
     }
 
     //Busca matérias pela hora
     async getByTime(time: number) {
         const subject = await this.subjectRepo.getByTime(time)
-        if(!subject) throw new Error("SUBJECT_NOT_FOUND")
-
         return subject
     }
 
     async getByClassroom(classroom: number) {
         const subject = await this.subjectRepo.getByClassroom(classroom)
-        if(!subject) throw new Error("SUBJECT_NOT_FOUND")
-
         return subject
     }
 }
