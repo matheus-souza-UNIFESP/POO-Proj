@@ -6,7 +6,6 @@ import { UserRepository } from "../src/infra/repositories/UserRepository"
 import { ScheduleRepository } from "../src/infra/repositories/ScheduleRepository"
 import { SubjectRepository } from "../src/infra/repositories/SubjectRepository"
 import { AuthRequest } from "./authMiddleware"
-import { authMiddleware } from "./authMiddleware"
 import { generateToken } from "./authMiddleware";
 
 const userRepo = new UserRepository()
