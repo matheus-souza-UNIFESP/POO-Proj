@@ -1,17 +1,13 @@
 import bcrypt from "bcrypt"
 import { UserRepository } from "../infra/repositories/UserRepository"
-import { ScheduleRepository } from "../infra/repositories/ScheduleRepository";
 import { User } from "../domain/User"
-import { Schedule } from "../domain/Schedule";
 
 export class UserService {
     private userRepo: UserRepository
-    private scheduleRepo: ScheduleRepository
     private saltRounds = 10
 
-    constructor(userRepo: UserRepository, scheduleRepo: ScheduleRepository) {
+    constructor(userRepo: UserRepository) {
         this.userRepo = userRepo
-        this.scheduleRepo = scheduleRepo
     }
 
     //Registrar usuário
