@@ -320,5 +320,209 @@ export const ScheduleController = {
         } catch(err: any) {
             res.status(400).json({ error: formatError(err) })
         }
+    }
+}
+
+export const SubjectController = {
+    async createSubject(req: AuthRequest, res: Response) {
+        try {
+            const isAdmin = req.user!.isAdmin
+
+            if(!isAdmin) {
+                return res.status(403).json({ error: "Acesso negado." })
+            }
+
+            const { name, professor, classes } = req.body
+
+            if(!isValidString(name)) {
+                return res.status(400).json({ error: "Nome inválido." })
+            }
+
+            if(!isValidString(professor)) {
+                return res.status(400).json({ error: "Professor inválido." })
+            }
+
+            if(!Array.isArray(classes) || classes.length === 0) {
+                return res.status(400).json({ error: "Lista de aulas inválida." })
+            }
+
+            for(const c of classes) {
+                if(
+                    typeof c.day !== "number" || c.day < 1 || c.day > 5 ||
+                    typeof c.time !== "number" || c.time < 1 || c.time > 6 ||
+                    typeof c.classroom !== "number" || isNaN(c.classroom)
+                ) {
+                    return res.status(400).json({ error: "Aulas em formato inválido." })
+                }
+            }
+
+            const newSubject = await subjectService.createSubject(name, professor, classes)
+            res.json(newSubject)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
     },
+
+    async updateSubject(req: AuthRequest, res: Response) {
+        try {
+            const isAdmin = req.user!.isAdmin
+            const subjectId = Number(req.params.id)
+
+            if(!isAdmin) {
+                return res.status(403).json({ error: "Acesso negado." })
+            }
+
+            if(isNaN(subjectId)) {
+                return res.status(400).json({ error: "ID da matéria inválido." })
+            }
+
+            const { name, professor, classes } = req.body
+
+            if(!isValidString(name)) {
+                return res.status(400).json({ error: "Nome inválido." })
+            }
+
+            if(!isValidString(professor)) {
+                return res.status(400).json({ error: "Professor inválido." })
+            }
+
+            if(!Array.isArray(classes) || classes.length === 0) {
+                return res.status(400).json({ error: "Lista de aulas inválida." })
+            }
+
+            for(const c of classes) {
+                if(
+                    typeof c.day !== "number" || c.day < 1 || c.day > 5 ||
+                    typeof c.time !== "number" || c.time < 1 || c.time > 6 ||
+                    typeof c.classroom !== "number" || isNaN(c.classroom)
+                ) {
+                    return res.status(400).json({ error: "Aulas em formato inválido." })
+                }
+            }
+
+            const updatedSubject = await subjectService.updateSubject(subjectId, name, professor, classes)
+            res.json(updatedSubject)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async deleteSubject(req: AuthRequest, res: Response) {
+        try {
+            const isAdmin = req.user!.isAdmin
+
+            if(!isAdmin) {
+                return res.status(403).json({ error: "Acesso negado." })
+            }
+
+            const subjectId = Number(req.params.id)
+            if(isNaN(subjectId)) {
+                return res.status(400).json({ error: "ID da matéria inválido." })
+            }
+
+            const deletedSubject = await subjectService.deleteSubject(subjectId)
+            res.json(deletedSubject)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getAll(req: AuthRequest, res: Response) {
+        try {
+            const subjects = await subjectService.getAll()
+            res.json(subjects)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getById(req: AuthRequest, res: Response) {
+        try {
+            const subjectId = Number(req.params.id)
+
+            if(isNaN(subjectId)) {
+                return res.status(400).json({ error: "ID da matéria inválido." })
+            }
+
+            const subject = await subjectService.getById(subjectId)
+            res.json(subject)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getByName(req: AuthRequest, res: Response) {
+        try {
+            const subjectName = req.params.name
+
+            if(!isValidString(subjectName)) {
+                return res.status(400).json({ error: "Nome inválido." })
+            }
+
+            const subject = await subjectService.getByName(subjectName!)
+            res.json(subject)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getByProfessor(req: AuthRequest, res: Response) {
+        try {
+            const professor = req.params.professor
+
+            if(!isValidString(professor)) {
+                return res.status(400).json({ error: "Professor inválido." })
+            }
+
+            const subject = await subjectService.getByProfessor(professor!)
+            res.json(subject)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getByDay(req: AuthRequest, res: Response) {
+        try {
+            const day = Number(req.params.day)
+
+            if(isNaN(day) || day < 1 || day > 5) {
+                return res.status(400).json({ error: "Dia inválido." })
+            }
+
+            const subjects = await subjectService.getByDay(day)
+            res.json(subjects)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getByTime(req: AuthRequest, res: Response) {
+        try {
+            const time = Number(req.params.time)
+
+            if(isNaN(time) || time < 1 || time > 6) {
+                return res.status(400).json({ error: "Horário inválido." })
+            }
+
+            const subjects = await subjectService.getByTime(time)
+            res.json(subjects)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+    async getByClassroom(req: AuthRequest, res: Response) {
+        try {
+            const classroom = Number(req.params.classroom)
+
+            if(isNaN(classroom)) {
+                return res.status(400).json({ error: "Sala de aula inválida." })
+            }
+
+            const subjects = await subjectService.getByClassroom(classroom)
+            res.json(subjects)
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    }
 }
