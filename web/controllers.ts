@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import { UserService } from "../src/services/UserService";
 import { ScheduleService } from "../src/services/ScheduleService";
 import { SubjectService } from "../src/services/SubjectService";
@@ -78,16 +78,60 @@ export const UserController = {
         }
     },
 
-    async updateUsername(req: AuthRequest, res: Response) {
+    async deleteUser(req: AuthRequest, res: Response) {
+        try {
+            if (!req.user!.isAdmin) {
+                return res.status(403).json({ error: "Acesso negado." })
+            }
+
+            const id = Number(req.params.id)
+            if (isNaN(id)) {
+                return res.status(400).json({ error: "ID inválido." })
+            }
+
+            const deleted = await userService.deleteUser(id)
+            res.json(deleted)
+
+        } catch (err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+
+    async getMe(req: AuthRequest, res: Response) {
         try {
             const userId = req.user!.id
+            const user = await userService.getById(userId)
+
+            if(!user) {
+                return res.status(404).json({ error: "Usuário não encontrado." })
+            }
+
+            const { password: _, ...safeUser } = user
+            res.json(safeUser)
+
+        } catch(err: any) {
+            res.status(400).json({ error: formatError(err) })
+        }
+    },
+
+
+    async updateUsername(req: AuthRequest, res: Response) {
+        try {
+            const targetUser = Number(req.params.id)
+            const loggedUser = Number(req.user!.id)
+            const isAdmin = req.user!.isAdmin
             const { newUsername } = req.body
+
+            if(targetUser !== loggedUser && !isAdmin) {
+                return res.status(403).json({ error: "Acesso negado." })
+            }
 
             if(!isValidString(newUsername)) {
                 return res.status(400).json({ error: "Nome de usuário inválido." })
             }
 
-            const updatedUser = await userService.updateUsername(userId, newUsername)
+            const updatedUser = await userService.updateUsername(targetUser, newUsername)
 
             const { password, ...userData } = updatedUser
             res.json(userData)
@@ -98,12 +142,12 @@ export const UserController = {
 
     async updatePassword(req: AuthRequest, res: Response) {
         try {
-            const userId = Number(req.params.id)
-            const adminId = req.user!.id
+            const targetUser = Number(req.params.id)
+            const loggedUser = Number(req.user!.id)
             const isAdmin = req.user!.isAdmin
             const { newPassword } = req.body
 
-            if(!isAdmin) {
+            if(targetUser !== loggedUser && !isAdmin) {
                 return res.status(403).json({ error: "Acesso negado." })
             }
 
@@ -115,7 +159,7 @@ export const UserController = {
                 return res.status(400).json({ error: "Senha deve ter ao menos 6 caracteres." })
             }
 
-            const updatedUser = await userService.updatePassword(adminId, userId, newPassword)
+            const updatedUser = await userService.updatePassword(targetUser, newPassword)
 
             const { password, ...userData } = updatedUser
             res.json(userData)
@@ -164,7 +208,7 @@ export const ScheduleController = {
             const loggedUser = req.user!.id
             const isAdmin = req.user!.isAdmin
 
-            if(!scheduleId) {
+            if(isNaN(scheduleId)) {
                 return res.status(400).json({ error: "ID da grade faltando." })
             }
 
@@ -186,7 +230,7 @@ export const ScheduleController = {
             const loggedUser = req.user!.id
             const isAdmin = req.user!.isAdmin
 
-            if(!scheduleId) {
+            if(isNaN(scheduleId)) {
                 return res.status(400).json({ error: "ID da grade faltando." })
             }
 
@@ -212,7 +256,7 @@ export const ScheduleController = {
             const loggedUser = req.user!.id
             const isAdmin = req.user!.isAdmin
 
-            if(!userId) {
+            if(isNaN(userId)) {
                 return res.status(400).json({ error: "ID do usuário faltando." })
             }
 
@@ -234,7 +278,7 @@ export const ScheduleController = {
             const scheduleId = Number(req.params.id)
             const { newName } = req.body
 
-            if(!scheduleId) {
+            if(isNaN(scheduleId)) {
                 return res.status(400).json({ error: "ID da grade faltando." })
             }
 
@@ -268,7 +312,7 @@ export const ScheduleController = {
             const scheduleId = Number(req.params.id)
             const { subjectId } = req.body
 
-            if(!scheduleId) {
+            if(isNaN(scheduleId)) {
                 return res.status(400).json({ error: "ID da grade faltando." })
             }
 
@@ -299,7 +343,7 @@ export const ScheduleController = {
             const scheduleId = Number(req.params.id)
             const { subjectId } = req.body
 
-            if(!scheduleId) {
+            if(isNaN(scheduleId)) {
                 return res.status(400).json({ error: "ID da grade faltando." })
             }
 
