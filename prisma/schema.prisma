@@ -35,7 +35,7 @@ model Subject {
 
 model User {
   id          Int       @id @default(autoincrement())
-  username    String
+  username    String    @unique
   password    String    //HASHED
   isAdmin     Boolean   @default(false)
   schedules   Schedule[]
