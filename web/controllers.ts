@@ -70,8 +70,10 @@ export const UserController = {
 
             const user = await userService.login(username, password)
 
+            const token = generateToken(user.id, user.isAdmin)
+
             const { password: _, ...userData } = user
-            res.json(userData)
+            res.json({ userData, token })
         } catch(err: any) {
             res.status(400).json({ error: formatError(err) })
         }

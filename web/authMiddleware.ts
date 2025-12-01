@@ -1,4 +1,3 @@
-// web/authMiddleware.ts
 import { Request, Response, NextFunction } from "express"
 import jwt from "jsonwebtoken"
 
@@ -24,10 +23,10 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     }
 }
 
-export function generateToken(user: { id: number, isAdmin: boolean }) {
+export function generateToken(id: number, isAdmin: boolean) {
     return jwt.sign(
-        { id: user.id, isAdmin: user.isAdmin },
+        { id, isAdmin },
         JWT_SECRET,
-        { expiresIn: "1h" }
+        { expiresIn: "7d" }
     )
 }
