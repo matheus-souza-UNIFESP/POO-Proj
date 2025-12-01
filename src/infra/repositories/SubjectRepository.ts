@@ -26,7 +26,7 @@ export class SubjectRepository {
     
     //Retorna uma matéria pelo nome
     async getByName(name: string) {
-        return await prisma.subject.findUnique({
+        return await prisma.subject.findFirst({
             where: { name },
             include: { classes: true }
         })
@@ -91,28 +91,21 @@ export class SubjectRepository {
     }
 
     async update(subject: Subject) {
+        await prisma.class.deleteMany({
+            where: { subjectId: subject.id! }
+        })
+
         return await prisma.subject.update({
             where: { id: subject.id },
             data: {
                 name: subject.name,
                 professor: subject.professor,
                 classes: {
-                     upsert: subject.classes.map(cls => ({
-                        where: { id: cls.id ?? 0 },
-                        update: {
-                            day: cls.day,
-                            time: cls.time,
-                            classroom: cls.classroom,
-                        },
-                        create: {
-                            day: cls.day,
-                            time: cls.time,
-                            classroom: cls.classroom,
-                        }
-                    })),
-                    deleteMany: {
-                        id: { notIn: subject.classes.map(c => c.id).filter(Boolean) }
-                    }
+                    create: subject.classes.map(c => ({
+                        day: c.day,
+                        time: c.time,
+                        classroom: c.classroom
+                    }))
                 }
             },
             include: { classes: true }
@@ -121,6 +114,30 @@ export class SubjectRepository {
 
     //Deleta permanentemente uma matéria
     async delete(id: number) {
+        const schedulesWithSubject = await prisma.schedule.findMany({
+            where: {
+                subjects: {
+                    some: { id }
+                }
+            },
+            select: { id: true }
+        })
+
+        for(const s of schedulesWithSubject) {
+            await prisma.schedule.update({
+                where: { id: s.id },
+                data: {
+                    subjects: {
+                        disconnect: { id }
+                    }
+                }
+            })
+        }
+
+        await prisma.class.deleteMany({
+            where: { subjectId: id }
+        })
+
         return await prisma.subject.delete({
             where: { id },
             include: { classes: true}

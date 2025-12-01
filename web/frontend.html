@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Horários</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #f4f4f7;
+      color: #222;
+    }
+    header {
+      background: #222;
+      color: #fff;
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 {
+      margin: 0;
+      font-size: 18px;
+    }
+    header .user-info {
+      font-size: 14px;
+    }
+    header button {
+      margin-left: 8px;
+    }
+    main {
+      padding: 16px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .card h2, .card h3 {
+      margin-top: 0;
+    }
+    .hidden {
+      display: none;
+    }
+    input, select, button {
+      font: inherit;
+      padding: 6px 8px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+    button {
+      cursor: pointer;
+      border: 1px solid #555;
+      background: #eee;
+    }
+    button.primary {
+      background: #007bff;
+      color: white;
+      border-color: #007bff;
+    }
+    button.danger {
+      background: #dc3545;
+      color: white;
+      border-color: #dc3545;
+    }
+    button.small {
+      font-size: 12px;
+      padding: 4px 6px;
+    }
+    .flex {
+      display: flex;
+      gap: 12px;
+    }
+    .flex-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .column {
+      flex: 1;
+      min-width: 0;
+    }
+    .schedule-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .schedule-grid-table th,
+    .schedule-grid-table td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      vertical-align: top;
+      font-size: 12px;
+    }
+    .schedule-grid-table th {
+      background: #f0f0f0;
+      text-align: center;
+      font-weight: 600;
+    }
+    .slot-subject {
+      background: #e8f0ff;
+      border-radius: 4px;
+      padding: 2px 4px;
+      margin-bottom: 2px;
+    }
+    .list {
+      max-height: 400px;
+      overflow-y: auto;
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+    .list-item {
+      padding: 4px 6px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .list-item:last-child {
+      border-bottom: none;
+    }
+    .list-item:hover {
+      background: #f5f5f5;
+    }
+    .badge {
+      display: inline-block;
+      background: #ddd;
+      padding: 1px 4px;
+      border-radius: 4px;
+      font-size: 11px;
+      margin-left: 4px;
+    }
+    .filters {
+      margin-bottom: 8px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .error {
+      color: #dc3545;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .success {
+      color: #28a745;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <h1>Horário UNIFESP (Demo)</h1>
+  <div class="user-info" id="user-info">
+    Não logado
+  </div>
+</header>
+
+<main>
+  <!-- AUTH VIEW -->
+  <div id="auth-view" class="card">
+    <h2>Login / Cadastro</h2>
+    <div class="flex" style="align-items:flex-start;">
+      <div class="column" style="max-width: 300px;">
+        <label>
+          Usuário<br />
+          <input type="text" id="auth-username" />
+        </label><br /><br />
+        <label>
+          Senha<br />
+          <input type="password" id="auth-password" />
+        </label><br /><br />
+        <button id="btn-login" class="primary">Login</button>
+        <button id="btn-register">Cadastrar + Login</button>
+        <div id="auth-message" class="error"></div>
+      </div>
+      <div class="column" style="font-size:13px; color:#555;">
+        <p><strong>Dica:</strong> você já tem o usuário <code>admin</code> com a senha <code>@adm1n678</code> (admin) pelo seed.</p>
+        <p>Ou crie um novo usuário normal pelo botão "Cadastrar + Login".</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP VIEW -->
+  <div id="app-view" class="hidden">
+    <!-- SCHEDULE LIST -->
+    <div class="card">
+      <div class="flex-between">
+        <h2>Minhas Grades</h2>
+        <button id="btn-refresh-schedules" class="small">Recarregar</button>
+      </div>
+      <div class="flex" style="margin-bottom:8px; align-items:flex-end;">
+        <div>
+          <label>
+            Nova grade: <br />
+            <input type="text" id="new-schedule-name" placeholder="Nome da grade" />
+          </label>
+        </div>
+        <div>
+          <button id="btn-create-schedule" class="primary small">Criar grade</button>
+        </div>
+        <div id="schedule-message" class="error"></div>
+      </div>
+      <div id="schedule-list"></div>
+    </div>
+
+    <!-- SCHEDULE DETAIL -->
+    <div id="schedule-detail" class="card hidden">
+      <div class="flex-between">
+        <h2 id="schedule-title">Grade</h2>
+        <div>
+          <input type="text" id="rename-schedule-input" placeholder="Novo nome" />
+          <button id="btn-rename-schedule" class="small">Renomear</button>
+        </div>
+      </div>
+      <div class="flex" style="align-items:flex-start; margin-top:8px;">
+        <!-- LEFT: subjects in schedule -->
+        <div class="column">
+          <h3>Matérias na grade</h3>
+          <p style="font-size:12px;color:#555;">Clique em uma matéria para <strong>remover</strong> da grade.</p>
+          <div id="schedule-subjects-list" class="list"></div>
+        </div>
+
+        <!-- CENTER: weekly grid -->
+        <div class="column" style="flex:2;">
+          <h3>Grade semanal</h3>
+          <table class="schedule-grid-table" id="schedule-grid"></table>
+        </div>
+
+        <!-- RIGHT: all subjects -->
+        <div class="column">
+          <h3>Todas as matérias</h3>
+          <p style="font-size:12px;color:#555;">Clique em uma matéria para <strong>adicionar</strong> à grade.</p>
+          <div class="filters">
+            <input type="text" id="subject-search" placeholder="Buscar por nome..." />
+            <select id="filter-day">
+              <option value="">Dia (todos)</option>
+              <option value="1">Segunda</option>
+              <option value="2">Terça</option>
+              <option value="3">Quarta</option>
+              <option value="4">Quinta</option>
+              <option value="5">Sexta</option>
+            </select>
+            <select id="filter-time">
+              <option value="">Horário (todos)</option>
+              <option value="1">08:00–10:00</option>
+              <option value="2">10:00–12:00</option>
+              <option value="3">13:30–15:30</option>
+              <option value="4">15:30–17:30</option>
+              <option value="5">19:00–21:00</option>
+              <option value="6">21:00–23:00</option>
+            </select>
+          </div>
+          <div id="all-subjects-list" class="list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+  const API_URL = "http://localhost:3000/api";
+
+  const TIME_SLOTS = [
+    { id: 1, label: "08:00–10:00" },
+    { id: 2, label: "10:00–12:00" },
+    { id: 3, label: "13:30–15:30" },
+    { id: 4, label: "15:30–17:30" },
+    { id: 5, label: "19:00–21:00" },
+    { id: 6, label: "21:00–23:00" }
+  ];
+
+  const DAYS = [
+    { id: 1, label: "Segunda" },
+    { id: 2, label: "Terça" },
+    { id: 3, label: "Quarta" },
+    { id: 4, label: "Quinta" },
+    { id: 5, label: "Sexta" }
+  ];
+
+  const state = {
+    token: null,
+    user: null,
+    schedules: [],
+    allSubjects: [],
+    currentScheduleId: null
+  };
+
+  // ---------- Helper: API wrapper ----------
+  async function api(path, options = {}) {
+    const headers = options.headers || {};
+    if (state.token) {
+      headers["Authorization"] = "Bearer " + state.token;
+    }
+    if (options.body && !headers["Content-Type"]) {
+      headers["Content-Type"] = "application/json";
+    }
+    const res = await fetch(API_URL + path, {
+      ...options,
+      headers
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const msg = data.error || "Erro desconhecido.";
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  // ---------- Auth ----------
+  async function login(username, password) {
+    const data = await api("/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    });
+    state.token = data.token;
+    state.user = data.userData;
+    await loadInitialData();
+    render();
+  }
+
+  async function registerAndLogin(username, password) {
+    await api("/register", {
+      method: "POST",
+      body: JSON.stringify({ username, password })
+    });
+    await login(username, password);
+  }
+
+  function logout() {
+    state.token = null;
+    state.user = null;
+    state.schedules = [];
+    state.allSubjects = [];
+    state.currentScheduleId = null;
+    render();
+  }
+
+  // ---------- Data loading ----------
+  async function loadInitialData() {
+    if (!state.user) return;
+    // all subjects (for right list + grid details)
+    state.allSubjects = await api("/subjects");
+    // schedules for user
+    state.schedules = await api(`/schedules/user/${state.user.id}`);
+  }
+
+  async function refreshSchedules() {
+    if (!state.user) return;
+    state.schedules = await api(`/schedules/user/${state.user.id}`);
+    renderScheduleList();
+    if (state.currentScheduleId) {
+      await openSchedule(state.currentScheduleId);
+    }
+  }
+
+  // ---------- UI render ----------
+  function render() {
+    const authView = document.getElementById("auth-view");
+    const appView = document.getElementById("app-view");
+    const userInfo = document.getElementById("user-info");
+
+    if (!state.token || !state.user) {
+      authView.classList.remove("hidden");
+      appView.classList.add("hidden");
+      userInfo.innerHTML = `Não logado`;
+    } else {
+      authView.classList.add("hidden");
+      appView.classList.remove("hidden");
+      userInfo.innerHTML = `
+        Logado como <strong>${state.user.username}</strong>
+        ${state.user.isAdmin ? '<span class="badge">admin</span>' : ""}
+        <button id="btn-logout" class="small">Logout</button>
+      `;
+      document.getElementById("btn-logout").onclick = logout;
+      renderScheduleList();
+      if (state.currentScheduleId) {
+        renderScheduleDetail();
+      } else {
+        document.getElementById("schedule-detail").classList.add("hidden");
+      }
+    }
+  }
+
+  function renderScheduleList() {
+    const container = document.getElementById("schedule-list");
+    container.innerHTML = "";
+    if (!state.schedules.length) {
+      container.innerHTML = "<p>Nenhuma grade cadastrada ainda.</p>";
+      return;
+    }
+
+    state.schedules.forEach(sch => {
+      const div = document.createElement("div");
+      div.className = "card";
+      const subjectsCount = sch.subjects ? sch.subjects.length : 0;
+      div.innerHTML = `
+        <div class="flex-between">
+          <div>
+            <strong>${sch.name}</strong>
+            <span class="badge">${subjectsCount} matéria(s)</span>
+          </div>
+          <div>
+            <button class="small" data-action="open">Abrir</button>
+            <button class="small danger" data-action="delete">Excluir</button>
+          </div>
+        </div>
+      `;
+      div.querySelector('[data-action="open"]').onclick = () => openSchedule(sch.id);
+      div.querySelector('[data-action="delete"]').onclick = () => deleteSchedule(sch.id, sch.name);
+      container.appendChild(div);
+    });
+  }
+
+  function renderScheduleDetail() {
+    const detail = document.getElementById("schedule-detail");
+    const title = document.getElementById("schedule-title");
+    const subjectsList = document.getElementById("schedule-subjects-list");
+    const allSubjectsList = document.getElementById("all-subjects-list");
+    const renameInput = document.getElementById("rename-schedule-input");
+    const grid = document.getElementById("schedule-grid");
+
+    const schedule = state.schedules.find(s => s.id === state.currentScheduleId);
+    if (!schedule) {
+      detail.classList.add("hidden");
+      return;
+    }
+
+    detail.classList.remove("hidden");
+    title.textContent = schedule.name;
+    renameInput.value = schedule.name;
+
+    // Build list of subjects in schedule with full details
+    const scheduleSubjectIds = (schedule.subjects || []).map(s => s.id);
+    const scheduleSubjectsDetailed = state.allSubjects.filter(sub => scheduleSubjectIds.includes(sub.id));
+
+    // Left list
+    subjectsList.innerHTML = "";
+    if (!scheduleSubjectsDetailed.length) {
+      subjectsList.innerHTML = "<p style='font-size:12px;color:#555;'>Nenhuma matéria adicionada ainda.</p>";
+    } else {
+      scheduleSubjectsDetailed.forEach(sub => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        item.textContent = `${sub.name} (${sub.professor})`;
+        item.title = "Clique para remover da grade";
+        item.onclick = () => removeSubjectFromSchedule(schedule.id, sub.id, sub.name);
+        subjectsList.appendChild(item);
+      });
+    }
+
+    // Right list (all subjects with filters)
+    renderAllSubjectsList(schedule);
+
+    // Grid
+    renderGrid(scheduleSubjectsDetailed, grid);
+  }
+
+  function renderAllSubjectsList(schedule) {
+    const list = document.getElementById("all-subjects-list");
+    const search = document.getElementById("subject-search").value.toLowerCase().trim();
+    const filterDay = document.getElementById("filter-day").value;
+    const filterTime = document.getElementById("filter-time").value;
+
+    const scheduleSubjectIds = (schedule.subjects || []).map(s => s.id);
+
+    let filtered = state.allSubjects.slice();
+
+    if (search) {
+      filtered = filtered.filter(s => s.name.toLowerCase().includes(search));
+    }
+
+    if (filterDay) {
+      const d = Number(filterDay);
+      filtered = filtered.filter(s =>
+        s.classes.some(c => c.day === d)
+      );
+    }
+
+    if (filterTime) {
+      const t = Number(filterTime);
+      filtered = filtered.filter(s =>
+        s.classes.some(c => c.time === t)
+      );
+    }
+
+    list.innerHTML = "";
+    if (!filtered.length) {
+      list.innerHTML = "<p style='font-size:12px;color:#555;'>Nenhuma matéria encontrada.</p>";
+      return;
+    }
+
+    filtered.forEach(sub => {
+      const item = document.createElement("div");
+      item.className = "list-item";
+      const alreadyIn = scheduleSubjectIds.includes(sub.id);
+      item.innerHTML = `
+        ${sub.name}
+        <span class="badge">${sub.professor}</span>
+        ${alreadyIn ? '<span class="badge">já na grade</span>' : ""}
+      `;
+      item.onclick = () => {
+        if (alreadyIn) {
+          alert("Essa matéria já está na grade.");
+        } else {
+          addSubjectToSchedule(schedule.id, sub.id, sub.name);
+        }
+      };
+      list.appendChild(item);
+    });
+  }
+
+  function renderGrid(subjects, gridElement) {
+    // Build map day-time -> array of subjects
+    const cells = {};
+    subjects.forEach(sub => {
+      (sub.classes || []).forEach(cls => {
+        const key = cls.day + "-" + cls.time;
+        if (!cells[key]) cells[key] = [];
+        cells[key].push({ name: sub.name, professor: sub.professor });
+      });
+    });
+
+    // Build table HTML
+    let html = "<thead><tr><th>Horário</th>";
+    DAYS.forEach(d => {
+      html += `<th>${d.label}</th>`;
+    });
+    html += "</tr></thead><tbody>";
+
+    TIME_SLOTS.forEach(slot => {
+      html += `<tr><th>${slot.label}</th>`;
+      DAYS.forEach(day => {
+        const key = day.id + "-" + slot.id;
+        const subs = cells[key] || [];
+        if (!subs.length) {
+          html += "<td></td>";
+        } else {
+          html += "<td>";
+          subs.forEach(s => {
+            html += `<div class="slot-subject">${s.name}<br/><span style="font-size:11px;color:#555;">${s.professor}</span></div>`;
+          });
+          html += "</td>";
+        }
+      });
+      html += "</tr>";
+    });
+
+    html += "</tbody>";
+    gridElement.innerHTML = html;
+  }
+
+  // ---------- Actions ----------
+  async function createSchedule() {
+    const input = document.getElementById("new-schedule-name");
+    const msg = document.getElementById("schedule-message");
+    msg.textContent = "";
+    const scheduleName = input.value.trim();
+    if (!scheduleName) {
+      msg.textContent = "Digite um nome para a grade.";
+      return;
+    }
+    try {
+      const created = await api("/schedules", {
+        method: "POST",
+        body: JSON.stringify({ scheduleName })
+      });
+      state.schedules.push(created);
+      input.value = "";
+      msg.textContent = "";
+      renderScheduleList();
+    } catch (err) {
+      msg.textContent = err.message;
+    }
+  }
+
+  async function openSchedule(id) {
+    // refresh schedules from API to get latest subjects
+    const sch = await api(`/schedules/${id}`);
+    // update local state
+    const idx = state.schedules.findIndex(s => s.id === id);
+    if (idx >= 0) {
+      state.schedules[idx] = sch;
+    } else {
+      state.schedules.push(sch);
+    }
+    state.currentScheduleId = id;
+    renderScheduleDetail();
+  }
+
+  async function deleteSchedule(id, name) {
+    if (!confirm(`Tem certeza que deseja excluir a grade "${name}"?`)) return;
+    try {
+      await api(`/schedules/${id}`, { method: "DELETE" });
+      state.schedules = state.schedules.filter(s => s.id !== id);
+      if (state.currentScheduleId === id) {
+        state.currentScheduleId = null;
+        document.getElementById("schedule-detail").classList.add("hidden");
+      }
+      renderScheduleList();
+    } catch (err) {
+      alert("Erro ao excluir grade: " + err.message);
+    }
+  }
+
+  async function renameSchedule() {
+    const input = document.getElementById("rename-schedule-input");
+    const newName = input.value.trim();
+    if (!newName) {
+      alert("Nome inválido.");
+      return;
+    }
+    const id = state.currentScheduleId;
+    if (!id) return;
+    try {
+      const sch = await api(`/schedules/${id}/rename`, {
+        method: "PUT",
+        body: JSON.stringify({ newName })
+      });
+      const idx = state.schedules.findIndex(s => s.id === id);
+      if (idx >= 0) state.schedules[idx] = sch;
+      renderScheduleDetail();
+      renderScheduleList();
+    } catch (err) {
+      alert("Erro ao renomear grade: " + err.message);
+    }
+  }
+
+  async function addSubjectToSchedule(scheduleId, subjectId, subjectName) {
+    if (!confirm(`Adicionar "${subjectName}" à grade?`)) return;
+    try {
+      const sch = await api(`/schedules/${scheduleId}/add-subject`, {
+        method: "POST",
+        body: JSON.stringify({ subjectId })
+      });
+      const idx = state.schedules.findIndex(s => s.id === scheduleId);
+      if (idx >= 0) state.schedules[idx] = sch;
+      else state.schedules.push(sch);
+      renderScheduleDetail();
+      renderScheduleList();
+    } catch (err) {
+      alert("Erro ao adicionar matéria: " + err.message);
+    }
+  }
+
+  async function removeSubjectFromSchedule(scheduleId, subjectId, subjectName) {
+    if (!confirm(`Remover "${subjectName}" da grade?`)) return;
+    try {
+      const sch = await api(`/schedules/${scheduleId}/remove-subject`, {
+        method: "POST",
+        body: JSON.stringify({ subjectId })
+      });
+      const idx = state.schedules.findIndex(s => s.id === scheduleId);
+      if (idx >= 0) state.schedules[idx] = sch;
+      else state.schedules.push(sch);
+      renderScheduleDetail();
+      renderScheduleList();
+    } catch (err) {
+      alert("Erro ao remover matéria: " + err.message);
+    }
+  }
+
+  // ---------- Event wiring ----------
+  window.addEventListener("DOMContentLoaded", () => {
+    // auth
+    const authMsg = document.getElementById("auth-message");
+    document.getElementById("btn-login").onclick = async () => {
+      authMsg.textContent = "";
+      const u = document.getElementById("auth-username").value.trim();
+      const p = document.getElementById("auth-password").value.trim();
+      if (!u || !p) {
+        authMsg.textContent = "Preencha usuário e senha.";
+        return;
+      }
+      try {
+        await login(u, p);
+      } catch (err) {
+        authMsg.textContent = err.message;
+      }
+    };
+    document.getElementById("btn-register").onclick = async () => {
+      authMsg.textContent = "";
+      const u = document.getElementById("auth-username").value.trim();
+      const p = document.getElementById("auth-password").value.trim();
+      if (!u || !p) {
+        authMsg.textContent = "Preencha usuário e senha.";
+        return;
+      }
+      if (p.length < 6) {
+        authMsg.textContent = "Senha deve ter ao menos 6 caracteres.";
+        return;
+      }
+      try {
+        await registerAndLogin(u, p);
+      } catch (err) {
+        authMsg.textContent = err.message;
+      }
+    };
+
+    // schedules
+    document.getElementById("btn-create-schedule").onclick = createSchedule;
+    document.getElementById("btn-refresh-schedules").onclick = refreshSchedules;
+    document.getElementById("btn-rename-schedule").onclick = renameSchedule;
+
+    // filters for all subjects
+    document.getElementById("subject-search").oninput = () => {
+      if (!state.currentScheduleId) return;
+      const sch = state.schedules.find(s => s.id === state.currentScheduleId);
+      if (sch) renderAllSubjectsList(sch);
+    };
+    document.getElementById("filter-day").onchange = () => {
+      if (!state.currentScheduleId) return;
+      const sch = state.schedules.find(s => s.id === state.currentScheduleId);
+      if (sch) renderAllSubjectsList(sch);
+    };
+    document.getElementById("filter-time").onchange = () => {
+      if (!state.currentScheduleId) return;
+      const sch = state.schedules.find(s => s.id === state.currentScheduleId);
+      if (sch) renderAllSubjectsList(sch);
+    };
+
+    render();
+  });
+</script>
+</body>
+</html>

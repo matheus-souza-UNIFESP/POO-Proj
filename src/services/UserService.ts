@@ -75,7 +75,7 @@ export class UserService {
     }
 
     //Lista todos os usuários (ADMIN)
-    async getAllUsers(adminId: number): Promise<User[]> {
+    async getAllUsers(adminId: number) {
         const admin = await this.userRepo.getById(adminId)
         if(!admin || !admin.isAdmin) throw new Error("NOT_AUTHORIZED")
 
@@ -83,7 +83,7 @@ export class UserService {
     }
 
     //Lista todos os usuários e suas grades (ADMIN)
-    async getAllUsersWithSchedules(adminId: number): Promise<User[]> {
+    async getAllUsersWithSchedules(adminId: number) {
         const admin = await this.userRepo.getById(adminId)
         if(!admin || !admin.isAdmin) throw new Error("NOT_AUTHORIZED")
 

@@ -468,6 +468,7 @@ export const SubjectController = {
             const deletedSubject = await subjectService.deleteSubject(subjectId)
             res.json(deletedSubject)
         } catch(err: any) {
+            console.error("DELETE SUBJECT ERROR:", err);
             res.status(400).json({ error: formatError(err) })
         }
     },

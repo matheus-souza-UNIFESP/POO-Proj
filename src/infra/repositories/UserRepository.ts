@@ -58,7 +58,7 @@ export class UserRepository {
     }
 
     //Altera o username de um usuário existente
-    async updateUsername(user: User) {
+    async updateUsername(user: { id: number, username: string }) {
         return await prisma.user.update({
             where: { id: user.id },
             data: { username: user.username },
@@ -67,7 +67,7 @@ export class UserRepository {
     }
 
     //Altera a senha de um usuário existente
-    async updatePassword(user: User) {
+    async updatePassword(user: {  id: number, password: string }) {
         return await prisma.user.update({
             where: { id: user.id },
             data: { password: user.password },

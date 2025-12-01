@@ -37,5 +37,6 @@ router.get("/schedules/user/:id", authMiddleware, ScheduleController.getByUser)
 router.put("/schedules/:id/rename", authMiddleware, ScheduleController.rename)
 router.post("/schedules/:id/add-subject", authMiddleware, ScheduleController.addSubject)
 router.post("/schedules/:id/remove-subject", authMiddleware, ScheduleController.removeSubject)
+router.delete("/schedules/:id", authMiddleware, ScheduleController.deleteSchedule)
 
 export default router
