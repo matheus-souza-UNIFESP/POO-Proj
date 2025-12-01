@@ -46,11 +46,14 @@
     .hidden {
       display: none;
     }
-    input, select, button {
+    input, select, textarea, button {
       font: inherit;
       padding: 6px 8px;
       border-radius: 4px;
       border: 1px solid #ccc;
+    }
+    textarea {
+      resize: vertical;
     }
     button {
       cursor: pointer;
@@ -153,6 +156,19 @@
       color: #28a745;
       font-size: 13px;
       margin-top: 4px;
+    }
+    table.admin-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    table.admin-table th, table.admin-table td {
+      border: 1px solid #ddd;
+      padding: 4px 6px;
+      text-align: left;
+    }
+    table.admin-table th {
+      background: #f2f2f2;
     }
   </style>
 </head>
@@ -263,6 +279,46 @@
         </div>
       </div>
     </div>
+
+    <!-- ADMIN PANEL (only for isAdmin) -->
+    <div id="admin-section" class="card hidden">
+      <h2>Admin</h2>
+      <div class="flex">
+        <!-- USERS -->
+        <div class="column">
+          <div class="flex-between">
+            <h3>Usuários</h3>
+            <button id="btn-admin-refresh-users" class="small">Recarregar</button>
+          </div>
+          <div id="admin-users-list"></div>
+        </div>
+
+        <!-- SUBJECTS -->
+        <div class="column">
+          <div class="flex-between">
+            <h3>Matérias</h3>
+            <button id="btn-admin-refresh-subjects" class="small">Recarregar</button>
+          </div>
+          <div style="font-size:12px;color:#555;margin-bottom:6px;">
+            <strong>Criar matéria:</strong> preencha nome, professor e aulas (uma por linha, formato <code>dia,time,sala</code>, ex: <code>2,3,210</code>).
+          </div>
+          <div class="flex" style="margin-bottom:6px;">
+            <div class="column">
+              <input type="text" id="admin-subject-name" placeholder="Nome da matéria" />
+            </div>
+            <div class="column">
+              <input type="text" id="admin-subject-professor" placeholder="Professor" />
+            </div>
+          </div>
+          <textarea id="admin-subject-classes" rows="3" placeholder="2,3,210&#10;4,3,210"></textarea><br/>
+          <button id="btn-admin-create-subject" class="primary small" style="margin-top:4px;">Criar matéria</button>
+          <div id="admin-subject-message" class="error"></div>
+          <hr />
+          <div id="admin-subjects-list"></div>
+        </div>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -291,7 +347,8 @@
     user: null,
     schedules: [],
     allSubjects: [],
-    currentScheduleId: null
+    currentScheduleId: null,
+    adminUsers: []
   };
 
   // ---------- Helper: API wrapper ----------
@@ -324,6 +381,9 @@
     state.token = data.token;
     state.user = data.userData;
     await loadInitialData();
+    if (state.user.isAdmin) {
+      await loadAdminUsers();
+    }
     render();
   }
 
@@ -341,16 +401,20 @@
     state.schedules = [];
     state.allSubjects = [];
     state.currentScheduleId = null;
+    state.adminUsers = [];
     render();
   }
 
   // ---------- Data loading ----------
   async function loadInitialData() {
     if (!state.user) return;
-    // all subjects (for right list + grid details)
     state.allSubjects = await api("/subjects");
-    // schedules for user
     state.schedules = await api(`/schedules/user/${state.user.id}`);
+  }
+
+  async function loadAdminUsers() {
+    if (!state.user || !state.user.isAdmin) return;
+    state.adminUsers = await api("/users");
   }
 
   async function refreshSchedules() {
@@ -362,31 +426,54 @@
     }
   }
 
+  async function refreshSubjects() {
+    state.allSubjects = await api("/subjects");
+    if (state.currentScheduleId) {
+      const sch = state.schedules.find(s => s.id === state.currentScheduleId);
+      if (sch) {
+        renderScheduleDetail();
+      }
+    }
+    if (state.user && state.user.isAdmin) {
+      renderAdminSubjects();
+    }
+  }
+
   // ---------- UI render ----------
   function render() {
     const authView = document.getElementById("auth-view");
     const appView = document.getElementById("app-view");
     const userInfo = document.getElementById("user-info");
+    const adminSection = document.getElementById("admin-section");
 
     if (!state.token || !state.user) {
       authView.classList.remove("hidden");
       appView.classList.add("hidden");
       userInfo.innerHTML = `Não logado`;
+      return;
+    }
+
+    authView.classList.add("hidden");
+    appView.classList.remove("hidden");
+    userInfo.innerHTML = `
+      Logado como <strong>${state.user.username}</strong>
+      ${state.user.isAdmin ? '<span class="badge">admin</span>' : ""}
+      <button id="btn-logout" class="small">Logout</button>
+    `;
+    document.getElementById("btn-logout").onclick = logout;
+
+    renderScheduleList();
+    if (state.currentScheduleId) {
+      renderScheduleDetail();
     } else {
-      authView.classList.add("hidden");
-      appView.classList.remove("hidden");
-      userInfo.innerHTML = `
-        Logado como <strong>${state.user.username}</strong>
-        ${state.user.isAdmin ? '<span class="badge">admin</span>' : ""}
-        <button id="btn-logout" class="small">Logout</button>
-      `;
-      document.getElementById("btn-logout").onclick = logout;
-      renderScheduleList();
-      if (state.currentScheduleId) {
-        renderScheduleDetail();
-      } else {
-        document.getElementById("schedule-detail").classList.add("hidden");
-      }
+      document.getElementById("schedule-detail").classList.add("hidden");
+    }
+
+    if (state.user.isAdmin) {
+      adminSection.classList.remove("hidden");
+      renderAdminSection();
+    } else {
+      adminSection.classList.add("hidden");
     }
   }
 
@@ -438,7 +525,6 @@
     title.textContent = schedule.name;
     renameInput.value = schedule.name;
 
-    // Build list of subjects in schedule with full details
     const scheduleSubjectIds = (schedule.subjects || []).map(s => s.id);
     const scheduleSubjectsDetailed = state.allSubjects.filter(sub => scheduleSubjectIds.includes(sub.id));
 
@@ -457,7 +543,7 @@
       });
     }
 
-    // Right list (all subjects with filters)
+    // Right list
     renderAllSubjectsList(schedule);
 
     // Grid
@@ -477,14 +563,12 @@
     if (search) {
       filtered = filtered.filter(s => s.name.toLowerCase().includes(search));
     }
-
     if (filterDay) {
       const d = Number(filterDay);
       filtered = filtered.filter(s =>
         s.classes.some(c => c.day === d)
       );
     }
-
     if (filterTime) {
       const t = Number(filterTime);
       filtered = filtered.filter(s =>
@@ -519,7 +603,6 @@
   }
 
   function renderGrid(subjects, gridElement) {
-    // Build map day-time -> array of subjects
     const cells = {};
     subjects.forEach(sub => {
       (sub.classes || []).forEach(cls => {
@@ -529,7 +612,6 @@
       });
     });
 
-    // Build table HTML
     let html = "<thead><tr><th>Horário</th>";
     DAYS.forEach(d => {
       html += `<th>${d.label}</th>`;
@@ -558,7 +640,245 @@
     gridElement.innerHTML = html;
   }
 
-  // ---------- Actions ----------
+  // ---------- ADMIN RENDER ----------
+  function renderAdminSection() {
+    renderAdminUsers();
+    renderAdminSubjects();
+  }
+
+  function renderAdminUsers() {
+    const container = document.getElementById("admin-users-list");
+    container.innerHTML = "";
+    if (!state.adminUsers.length) {
+      container.innerHTML = "<p style='font-size:12px;color:#555;'>Nenhum usuário encontrado.</p>";
+      return;
+    }
+
+    let html = `<table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Usuário</th>
+          <th>Tipo</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    state.adminUsers.forEach(u => {
+      html += `<tr>
+        <td>${u.id}</td>
+        <td>${u.username}</td>
+        <td>${u.isAdmin ? "Admin" : "Normal"}</td>
+        <td>
+          ${
+            u.id === state.user.id
+              ? "<span style='font-size:11px;color:#777;'>não pode se apagar</span>"
+              : `<button class="small danger" data-user-id="${u.id}">Excluir</button>`
+          }
+        </td>
+      </tr>`;
+    });
+    html += "</tbody></table>";
+    container.innerHTML = html;
+
+    container.querySelectorAll("button[data-user-id]").forEach(btn => {
+      btn.onclick = () => {
+        const id = Number(btn.getAttribute("data-user-id"));
+        const user = state.adminUsers.find(u => u.id === id);
+        if (!user) return;
+        adminDeleteUser(id, user.username);
+      };
+    });
+  }
+
+  function renderAdminSubjects() {
+    const container = document.getElementById("admin-subjects-list");
+    container.innerHTML = "";
+    if (!state.allSubjects.length) {
+      container.innerHTML = "<p style='font-size:12px;color:#555;'>Nenhuma matéria cadastrada.</p>";
+      return;
+    }
+
+    let html = `<table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Professor</th>
+          <th>Aulas</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>`;
+    state.allSubjects.forEach(sub => {
+      const classesCount = sub.classes ? sub.classes.length : 0;
+      html += `<tr>
+        <td>${sub.id}</td>
+        <td>${sub.name}</td>
+        <td>${sub.professor}</td>
+        <td>${classesCount}</td>
+        <td>
+          <button class="small" data-subject-id="${sub.id}" data-action="edit">Editar</button>
+          <button class="small danger" data-subject-id="${sub.id}" data-action="delete">Excluir</button>
+        </td>
+      </tr>`;
+    });
+    html += "</tbody></table>";
+    container.innerHTML = html;
+
+    container.querySelectorAll("button[data-subject-id]").forEach(btn => {
+      const id = Number(btn.getAttribute("data-subject-id"));
+      const action = btn.getAttribute("data-action");
+      if (action === "delete") {
+        btn.onclick = () => {
+          const sub = state.allSubjects.find(s => s.id === id);
+          if (!sub) return;
+          adminDeleteSubject(id, sub.name);
+        };
+      } else if (action === "edit") {
+        btn.onclick = () => {
+          const sub = state.allSubjects.find(s => s.id === id);
+          if (!sub) return;
+          adminEditSubject(sub);
+        };
+      }
+    });
+  }
+
+  // ---------- ADMIN ACTIONS ----------
+  async function adminDeleteUser(id, username) {
+    if (!confirm(`Tem certeza que deseja excluir o usuário "${username}"?`)) return;
+    try {
+      await api(`/users/${id}`, { method: "DELETE" });
+      state.adminUsers = state.adminUsers.filter(u => u.id !== id);
+      renderAdminUsers();
+    } catch (err) {
+      alert("Erro ao excluir usuário: " + err.message);
+    }
+  }
+
+  function parseClassesFromText(text) {
+    const lines = text.split("\n").map(l => l.trim()).filter(l => l);
+    const classes = [];
+    for (const line of lines) {
+      const parts = line.split(",").map(p => p.trim());
+      if (parts.length !== 3) {
+        throw new Error(`Linha inválida: "${line}" (use dia,time,sala)`);
+      }
+      const [dayStr, timeStr, classroomStr] = parts;
+      const day = Number(dayStr);
+      const time = Number(timeStr);
+      const classroom = Number(classroomStr);
+      if (
+        !Number.isInteger(day) || day < 1 || day > 5 ||
+        !Number.isInteger(time) || time < 1 || time > 6 ||
+        !Number.isInteger(classroom)
+      ) {
+        throw new Error(`Valores inválidos na linha: "${line}"`);
+      }
+      classes.push({ day, time, classroom });
+    }
+    return classes;
+  }
+
+  async function adminCreateSubject() {
+    const nameInput = document.getElementById("admin-subject-name");
+    const profInput = document.getElementById("admin-subject-professor");
+    const classesInput = document.getElementById("admin-subject-classes");
+    const msg = document.getElementById("admin-subject-message");
+
+    msg.textContent = "";
+    const name = nameInput.value.trim();
+    const professor = profInput.value.trim();
+    const classesText = classesInput.value;
+
+    if (!name || !professor) {
+      msg.textContent = "Preencha nome e professor.";
+      return;
+    }
+
+    let classes;
+    try {
+      classes = parseClassesFromText(classesText);
+    } catch (err) {
+      msg.textContent = err.message;
+      return;
+    }
+
+    try {
+      await api("/subjects", {
+        method: "POST",
+        body: JSON.stringify({ name, professor, classes })
+      });
+      msg.textContent = "";
+      nameInput.value = "";
+      profInput.value = "";
+      classesInput.value = "";
+      await refreshSubjects();
+      if (state.user.isAdmin) {
+        renderAdminSubjects();
+      }
+    } catch (err) {
+      msg.textContent = err.message;
+    }
+  }
+
+  async function adminDeleteSubject(id, name) {
+    if (!confirm(`Tem certeza que deseja excluir a matéria "${name}"?`)) return;
+    try {
+      await api(`/subjects/${id}`, { method: "DELETE" });
+      await refreshSubjects();
+      if (state.user && state.user.isAdmin) {
+        renderAdminSubjects();
+      }
+    } catch (err) {
+      alert("Erro ao excluir matéria: " + err.message);
+    }
+  }
+
+  async function adminEditSubject(sub) {
+    const newName = prompt("Novo nome da matéria:", sub.name);
+    if (newName === null) return;
+    const newProf = prompt("Novo professor:", sub.professor);
+    if (newProf === null) return;
+
+    const currentClassesText = (sub.classes || [])
+      .map(c => `${c.day},${c.time},${c.classroom}`)
+      .join("\n");
+
+    const newClassesText = prompt(
+      "Aulas (uma por linha: dia,time,sala):",
+      currentClassesText || "2,3,210"
+    );
+    if (newClassesText === null) return;
+
+    let classes;
+    try {
+      classes = parseClassesFromText(newClassesText);
+    } catch (err) {
+      alert(err.message);
+      return;
+    }
+
+    try {
+      await api(`/subjects/${sub.id}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: newName.trim(),
+          professor: newProf.trim(),
+          classes
+        })
+      });
+      await refreshSubjects();
+      if (state.user && state.user.isAdmin) {
+        renderAdminSubjects();
+      }
+    } catch (err) {
+      alert("Erro ao editar matéria: " + err.message);
+    }
+  }
+
+  // ---------- Schedule actions ----------
   async function createSchedule() {
     const input = document.getElementById("new-schedule-name");
     const msg = document.getElementById("schedule-message");
@@ -583,9 +903,7 @@
   }
 
   async function openSchedule(id) {
-    // refresh schedules from API to get latest subjects
     const sch = await api(`/schedules/${id}`);
-    // update local state
     const idx = state.schedules.findIndex(s => s.id === id);
     if (idx >= 0) {
       state.schedules[idx] = sch;
@@ -670,7 +988,6 @@
 
   // ---------- Event wiring ----------
   window.addEventListener("DOMContentLoaded", () => {
-    // auth
     const authMsg = document.getElementById("auth-message");
     document.getElementById("btn-login").onclick = async () => {
       authMsg.textContent = "";
@@ -705,12 +1022,10 @@
       }
     };
 
-    // schedules
     document.getElementById("btn-create-schedule").onclick = createSchedule;
     document.getElementById("btn-refresh-schedules").onclick = refreshSchedules;
     document.getElementById("btn-rename-schedule").onclick = renameSchedule;
 
-    // filters for all subjects
     document.getElementById("subject-search").oninput = () => {
       if (!state.currentScheduleId) return;
       const sch = state.schedules.find(s => s.id === state.currentScheduleId);
@@ -726,6 +1041,17 @@
       const sch = state.schedules.find(s => s.id === state.currentScheduleId);
       if (sch) renderAllSubjectsList(sch);
     };
+
+    // admin
+    document.getElementById("btn-admin-refresh-users").onclick = async () => {
+      await loadAdminUsers();
+      renderAdminUsers();
+    };
+    document.getElementById("btn-admin-refresh-subjects").onclick = async () => {
+      await refreshSubjects();
+      renderAdminSubjects();
+    };
+    document.getElementById("btn-admin-create-subject").onclick = adminCreateSubject;
 
     render();
   });
