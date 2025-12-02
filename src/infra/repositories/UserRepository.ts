@@ -52,10 +52,14 @@ export class UserRepository {
 
     //Deleta permanentemente um usuário
     async delete(id: number) {
-        return await prisma.user.delete({
-            where: { id }
-        })
-    }
+    await prisma.schedule.deleteMany({
+        where: { userId: id }
+    })
+
+    return await prisma.user.delete({
+        where: { id }
+    })
+}
 
     //Altera o username de um usuário existente
     async updateUsername(user: { id: number, username: string }) {
